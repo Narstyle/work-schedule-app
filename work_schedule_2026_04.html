@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2026년도 병동 근무표</title>
+  <meta name="theme-color" content="#2563eb">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="2026년도 병동 근무표">
+  <link rel="manifest" href="manifest.webmanifest">
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --line: #cbd5e1;
+      --text: #0f172a;
+      --primary: #2563eb;
+      --holiday: #dc2626;
+      --saturday: #2563eb;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .app {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px 16px 40px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 28px;
+    }
+
+    .install-btn {
+      display: none;
+      height: 40px;
+      padding: 0 14px;
+      border: 0;
+      border-radius: 10px;
+      background: var(--primary);
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .install-btn.show {
+      display: inline-block;
+    }
+
+    .carousel {
+      display: grid;
+      gap: 14px;
+    }
+
+    .carousel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .nav-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .nav-btn {
+      width: 42px;
+      height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--surface);
+      color: var(--text);
+      font-size: 20px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .nav-btn:hover {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+    }
+
+    .month-indicator {
+      min-width: 160px;
+      text-align: center;
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .viewport {
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--surface);
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+    }
+
+    .track {
+      display: flex;
+      transition: transform 0.28s ease;
+      will-change: transform;
+    }
+
+    .slide {
+      min-width: 100%;
+      width: 100%;
+    }
+
+    .month-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid #e2e8f0;
+      font-size: 22px;
+      font-weight: bold;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    th,
+    td {
+      position: relative;
+      width: 14.28%;
+      min-height: 118px;
+      padding: 8px;
+      border: 1px solid #e2e8f0;
+      vertical-align: top;
+    }
+
+    th {
+      background: #f8fafc;
+      text-align: center;
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    td {
+      height: 128px;
+      background: #ffffff;
+    }
+
+    td.empty {
+      background: #f8fafc;
+    }
+
+    .sun {
+      color: var(--holiday);
+    }
+
+    .sat {
+      color: var(--saturday);
+    }
+
+    .holiday-date {
+      color: var(--holiday);
+    }
+
+    .date {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 32px;
+      height: 30px;
+      padding: 0 8px;
+      border-radius: 999px;
+      font-size: 17px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .date:hover {
+      background: #eef2ff;
+    }
+
+    .holiday-name {
+      display: block;
+      margin-top: 4px;
+      font-size: 11px;
+      font-weight: bold;
+      color: var(--holiday);
+      line-height: 1.3;
+    }
+
+    .shift {
+      display: block;
+      margin-top: 10px;
+      font-size: 20px;
+      font-weight: bold;
+      color: var(--text);
+    }
+
+    .memo {
+      display: block;
+      min-height: 38px;
+      margin-top: 8px;
+      font-size: 13px;
+      line-height: 1.4;
+      color: #334155;
+      white-space: pre-wrap;
+      word-break: break-word;
+      cursor: text;
+      outline: none;
+    }
+
+    .shift-picker {
+      position: absolute;
+      left: 8px;
+      top: 42px;
+      display: none;
+      gap: 6px;
+      flex-wrap: wrap;
+      padding: 8px;
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.14);
+      z-index: 10;
+    }
+
+    .shift-picker.open {
+      display: flex;
+    }
+
+    .shift-btn {
+      min-width: 36px;
+      height: 32px;
+      padding: 0 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      background: #f8fafc;
+      color: #111827;
+      font-size: 13px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .shift-btn:hover {
+      background: #e2e8f0;
+    }
+
+    .shift-btn.clear {
+      min-width: 52px;
+      background: #fff1f2;
+      border-color: #fecdd3;
+      color: #be123c;
+    }
+
+    @media (max-width: 640px) {
+      .app {
+        padding: 16px 10px 28px;
+      }
+
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+
+      .month-header {
+        font-size: 20px;
+      }
+
+      .month-indicator {
+        min-width: 120px;
+        font-size: 18px;
+      }
+
+      th,
+      td {
+        padding: 6px;
+      }
+
+      td {
+        height: 118px;
+      }
+
+      .shift {
+        font-size: 17px;
+      }
+
+      .memo {
+        font-size: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <h1>2026년도 병동 근무표</h1>
+      <button id="installButton" class="install-btn" type="button">Install App</button>
+    </div>
+
+    <div class="carousel">
+      <div class="carousel-header">
+        <div class="nav-group">
+          <button id="prevMonth" class="nav-btn" type="button" aria-label="이전 달"><</button>
+          <div id="monthIndicator" class="month-indicator"></div>
+          <button id="nextMonth" class="nav-btn" type="button" aria-label="다음 달">></button>
+        </div>
+      </div>
+
+      <div class="viewport">
+        <div id="track" class="track"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const installButton = document.getElementById("installButton");
+    const track = document.getElementById("track");
+    const monthIndicator = document.getElementById("monthIndicator");
+    const prevMonthButton = document.getElementById("prevMonth");
+    const nextMonthButton = document.getElementById("nextMonth");
+    const storageKey = "ward-schedule-2026-may-dec";
+    const slideIndexKey = "ward-schedule-2026-slide-index";
+    let deferredPrompt = null;
+
+    const monthLabels = ["", "1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"];
+    const dayLabels = ["일", "월", "화", "수", "목", "금", "토"];
+    const shiftOptions = ["D", "E", "N", "Off", "A"];
+    const months = [5, 6, 7, 8, 9, 10, 11, 12];
+
+    const holidays = {
+      "2026-05-05": "어린이날",
+      "2026-05-25": "부처님오신날 대체",
+      "2026-06-03": "전국동시지방선거",
+      "2026-06-06": "현충일",
+      "2026-08-15": "광복절",
+      "2026-08-17": "광복절 대체",
+      "2026-09-24": "추석연휴",
+      "2026-09-25": "추석",
+      "2026-09-26": "추석연휴",
+      "2026-10-03": "개천절",
+      "2026-10-05": "개천절 대체",
+      "2026-10-09": "한글날",
+      "2026-12-25": "성탄절"
+    };
+
+    function getDateKey(year, month, day) {
+      return [
+        year,
+        String(month).padStart(2, "0"),
+        String(day).padStart(2, "0")
+      ].join("-");
+    }
+
+    function loadJson(key, fallback) {
+      try {
+        const value = JSON.parse(localStorage.getItem(key));
+        return value == null ? fallback : value;
+      } catch (error) {
+        return fallback;
+      }
+    }
+
+    function saveJson(key, value) {
+      localStorage.setItem(key, JSON.stringify(value));
+    }
+
+    function moveCaretToEnd(element) {
+      const selection = window.getSelection();
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      range.collapse(false);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+
+    function renderMonth(year, month) {
+      const slide = document.createElement("section");
+      slide.className = "slide";
+      slide.dataset.month = String(month);
+
+      const header = document.createElement("div");
+      header.className = "month-header";
+      header.textContent = year + "년 " + monthLabels[month];
+      slide.appendChild(header);
+
+      const table = document.createElement("table");
+      const thead = document.createElement("thead");
+      const headRow = document.createElement("tr");
+
+      dayLabels.forEach((label, index) => {
+        const th = document.createElement("th");
+        th.textContent = label;
+        if (index === 0) th.className = "sun";
+        if (index === 6) th.className = "sat";
+        headRow.appendChild(th);
+      });
+
+      thead.appendChild(headRow);
+      table.appendChild(thead);
+
+      const tbody = document.createElement("tbody");
+      const firstDay = new Date(year, month - 1, 1).getDay();
+      const daysInMonth = new Date(year, month, 0).getDate();
+      let row = document.createElement("tr");
+
+      for (let i = 0; i < firstDay; i += 1) {
+        const emptyCell = document.createElement("td");
+        emptyCell.className = "empty";
+        row.appendChild(emptyCell);
+      }
+
+      for (let day = 1; day <= daysInMonth; day += 1) {
+        const weekday = new Date(year, month - 1, day).getDay();
+        const dateKey = getDateKey(year, month, day);
+        const holidayName = holidays[dateKey] || "";
+
+        const cell = document.createElement("td");
+        cell.dataset.dateKey = dateKey;
+
+        const date = document.createElement("span");
+        date.className = "date";
+        date.textContent = String(day);
+
+        if (holidayName || weekday === 0) {
+          date.classList.add("holiday-date");
+        } else if (weekday === 6) {
+          date.classList.add("sat");
+        }
+
+        const holidayLabel = document.createElement("span");
+        holidayLabel.className = "holiday-name";
+        holidayLabel.textContent = holidayName;
+
+        const shift = document.createElement("span");
+        shift.className = "shift";
+
+        const memo = document.createElement("div");
+        memo.className = "memo";
+        memo.contentEditable = "true";
+        memo.spellcheck = false;
+
+        const picker = document.createElement("div");
+        picker.className = "shift-picker";
+
+        shiftOptions.forEach((option) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "shift-btn";
+          button.dataset.value = option;
+          button.textContent = option;
+          picker.appendChild(button);
+        });
+
+        const clearButton = document.createElement("button");
+        clearButton.type = "button";
+        clearButton.className = "shift-btn clear";
+        clearButton.dataset.value = "";
+        clearButton.textContent = "Clear";
+        picker.appendChild(clearButton);
+
+        cell.appendChild(date);
+        cell.appendChild(holidayLabel);
+        cell.appendChild(shift);
+        cell.appendChild(memo);
+        cell.appendChild(picker);
+        row.appendChild(cell);
+
+        if (weekday === 6) {
+          tbody.appendChild(row);
+          row = document.createElement("tr");
+        }
+      }
+
+      if (row.children.length > 0) {
+        while (row.children.length < 7) {
+          const emptyCell = document.createElement("td");
+          emptyCell.className = "empty";
+          row.appendChild(emptyCell);
+        }
+        tbody.appendChild(row);
+      }
+
+      table.appendChild(tbody);
+      slide.appendChild(table);
+      return slide;
+    }
+
+    months.forEach((month) => {
+      track.appendChild(renderMonth(2026, month));
+    });
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("service-worker.js");
+      });
+    }
+
+    function closeAllPickers() {
+      document.querySelectorAll(".shift-picker.open").forEach((picker) => {
+        picker.classList.remove("open");
+      });
+    }
+
+    const scheduleData = loadJson(storageKey, {});
+    const cells = document.querySelectorAll("td[data-date-key]");
+
+    cells.forEach((cell) => {
+      const dateKey = cell.dataset.dateKey;
+      const date = cell.querySelector(".date");
+      const shift = cell.querySelector(".shift");
+      const memo = cell.querySelector(".memo");
+      const picker = cell.querySelector(".shift-picker");
+      const savedItem = scheduleData[dateKey];
+
+      if (savedItem) {
+        shift.textContent = savedItem.shift || "";
+        memo.textContent = savedItem.memo || "";
+      }
+
+      function persistCell() {
+        scheduleData[dateKey] = {
+          shift: shift.textContent.trim(),
+          memo: memo.textContent.trim()
+        };
+        saveJson(storageKey, scheduleData);
+      }
+
+      date.addEventListener("click", (event) => {
+        event.stopPropagation();
+        const alreadyOpen = picker.classList.contains("open");
+        closeAllPickers();
+        if (!alreadyOpen) {
+          picker.classList.add("open");
+        }
+      });
+
+      picker.querySelectorAll(".shift-btn").forEach((button) => {
+        button.addEventListener("click", (event) => {
+          event.stopPropagation();
+          shift.textContent = button.dataset.value;
+          picker.classList.remove("open");
+          persistCell();
+        });
+      });
+
+      cell.addEventListener("click", (event) => {
+        if (event.target.closest(".date") || event.target.closest(".shift-picker")) {
+          return;
+        }
+
+        memo.focus();
+        moveCaretToEnd(memo);
+      });
+
+      memo.addEventListener("input", persistCell);
+      memo.addEventListener("blur", () => {
+        memo.textContent = memo.textContent.trim();
+        persistCell();
+      });
+    });
+
+    document.addEventListener("click", () => {
+      closeAllPickers();
+    });
+
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth() + 1;
+    const savedSlideIndex = loadJson(slideIndexKey, null);
+    const todayMonthIndex = months.indexOf(currentMonth);
+    let currentSlideIndex = 0;
+
+    if (currentYear === 2026 && todayMonthIndex !== -1) {
+      currentSlideIndex = todayMonthIndex;
+    } else if (typeof savedSlideIndex === "number" && savedSlideIndex >= 0 && savedSlideIndex < months.length) {
+      currentSlideIndex = savedSlideIndex;
+    }
+
+    function updateCarousel() {
+      track.style.transform = "translateX(-" + (currentSlideIndex * 100) + "%)";
+      monthIndicator.textContent = "2026년 " + monthLabels[months[currentSlideIndex]];
+      saveJson(slideIndexKey, currentSlideIndex);
+      prevMonthButton.disabled = currentSlideIndex === 0;
+      nextMonthButton.disabled = currentSlideIndex === months.length - 1;
+      prevMonthButton.style.opacity = currentSlideIndex === 0 ? "0.45" : "1";
+      nextMonthButton.style.opacity = currentSlideIndex === months.length - 1 ? "0.45" : "1";
+    }
+
+    prevMonthButton.addEventListener("click", () => {
+      if (currentSlideIndex > 0) {
+        currentSlideIndex -= 1;
+        updateCarousel();
+      }
+    });
+
+    nextMonthButton.addEventListener("click", () => {
+      if (currentSlideIndex < months.length - 1) {
+        currentSlideIndex += 1;
+        updateCarousel();
+      }
+    });
+
+    let touchStartX = 0;
+    let touchEndX = 0;
+
+    track.addEventListener("touchstart", (event) => {
+      touchStartX = event.changedTouches[0].clientX;
+    }, { passive: true });
+
+    track.addEventListener("touchend", (event) => {
+      touchEndX = event.changedTouches[0].clientX;
+      const distance = touchEndX - touchStartX;
+
+      if (distance > 50 && currentSlideIndex > 0) {
+        currentSlideIndex -= 1;
+        updateCarousel();
+      } else if (distance < -50 && currentSlideIndex < months.length - 1) {
+        currentSlideIndex += 1;
+        updateCarousel();
+      }
+    }, { passive: true });
+
+    updateCarousel();
+
+    window.addEventListener("beforeinstallprompt", (event) => {
+      event.preventDefault();
+      deferredPrompt = event;
+      installButton.classList.add("show");
+    });
+
+    installButton.addEventListener("click", async () => {
+      if (!deferredPrompt) {
+        return;
+      }
+
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      installButton.classList.remove("show");
+    });
+
+    window.addEventListener("appinstalled", () => {
+      installButton.classList.remove("show");
+    });
+  </script>
+</body>
+</html>
